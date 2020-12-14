@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # data.note2id maps word to index, e.g. data.note2id['mozart'] = 0
     # data.id2note maps index to word, e.g. data.id2note[0] = 'mozart'
 
-    inputs_data, target_data = data.get_inputs_and_targets(length=10, overlap=0.2)
+    inputs_data, target_data = data.get_inputs_and_targets(length=32, overlap=0.2)
 
     train_loader = DataLoader(
         dataset=NoteDataset(inputs_data, target_data),
@@ -30,18 +30,6 @@ if __name__ == '__main__':
     model = Seq2Seq(len(data.note2id), len(data.note2id), 100, 128)
 
     # to use cuda: trainer = pl.Trainer(max_epochs=?, gpus=1)
-    trainer = pl.Trainer(max_epochs=20)
+    trainer = pl.Trainer(max_epochs=1)
 
     trainer.fit(model, train_loader)
-
-    # shape of x: (sequence_length, batch_size=1)
-    pred, prob, _ = model.predict(
-        x=torch.tensor(data.note2id['mozart']).unsqueeze(1),
-        y=data.note2id['mozart'],
-        predict_length=1
-    )
-
-    # prob: [tensor_1, tensor_2, ..., tensor_predict_length]
-    # if predict_length = 1, prob = [tensor_1]
-    # shape of tensor_i: (1, vocab_size)
-    # tensor_i contains probability of each word

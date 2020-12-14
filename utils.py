@@ -43,7 +43,7 @@ class DataParser(object):
             if self.keep_author:
                 s = file.split('/')
                 if len(s) != 2:
-                    raise ValueError("If keep_author is True, names in file_list should be of format 'author/example.txt'")
+                    raise ValueError("If keep_author is True, names in file_list should be of format 'author/example.txt'.")
                 author, _ = s
             with open(self.path + '/' + file, encoding='utf-8') as f:
                 for line in f:
@@ -67,7 +67,6 @@ class DataParser(object):
                 ngs = list(ngrams(i[1:], ngram))
                 ret.append([[i[0]] + list(j) for j in ngs])
                 return ret
-            # return [[i[0]] + list(ngrams(i, ngram)) for i in self.melodies]
         else:
             return [list(ngrams(i, ngram)) for i in self.melodies]
 

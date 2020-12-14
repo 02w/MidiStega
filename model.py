@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import pytorch_lightning as pl
+import random
 
 
 ###########################################################
@@ -35,16 +36,16 @@ class Encoder(pl.LightningModule):
 
 
 class Attention(pl.LightningModule):
-    def __init__(self, hidden_size, score='general'):
+    def __init__(self, hidden_size, score_fn='general'):
         super().__init__()
-        self.score_fn = score
-        if score == 'general':
+        self.score_fn = score_fn
+        if score_fn == 'general':
             self.w = nn.Linear(hidden_size, hidden_size)
-        elif score == 'concat':
+        elif score_fn == 'concat':
             self.w = nn.Linear(hidden_size * 2, hidden_size)
             self.v = nn.Parameter(torch.FloatTensor(hidden_size))
-        elif score != 'dot':
-            raise ValueError("score should be 'dot', 'general' or 'concat', '{}' is not supported.".format(score))
+        elif score_fn != 'dot':
+            raise ValueError("score should be 'dot', 'general' or 'concat', '{}' is not supported.".format(score_fn))
 
     def score(self, decoder_out, encoder_out):
         if self.score_fn == 'dot':
@@ -94,19 +95,19 @@ class Decoder(pl.LightningModule):
 class Seq2Seq(pl.LightningModule):
     def __init__(self, encoder_vocab_size, decoder_vocab_size, embedding_dim, hidden_dim):
         super().__init__()
+        self.encoder_vocab_size = encoder_vocab_size
+        self.decoder_vocab_size = decoder_vocab_size
         self.encoder = Encoder(encoder_vocab_size, embedding_dim, hidden_dim)
         self.decoder = Decoder(decoder_vocab_size, embedding_dim, hidden_dim)
-        # self.out_length = out_length
 
-    def forward(self, inputs, target):
-        # length = self.out_length if self.out_length > 0 else target.size(0)
+    def forward(self, inputs, target, teacher_force_ratio=0.5):
         out = torch.zeros(target.size(0), target.size(1), self.decoder.output_size).to(inputs.device)
         encoder_out, hidden = self.encoder(inputs)
 
         x = target[0]
         for t in range(target.size(0)):
             out[t], hidden, _ = self.decoder(x, hidden, encoder_out)
-            x = out[t].argmax(1)
+            x = target[t] if random.random() > teacher_force_ratio else out[t].argmax(1)
         return out
 
     def configure_optimizers(self):
@@ -119,9 +120,6 @@ class Seq2Seq(pl.LightningModule):
         self.log('Train loss', loss)
         return loss
 
-    # def predict(self, x):
-    #     output = self(x)
-    #     return F.softmax(output, dim=2)
     @torch.no_grad()
     def predict(self, x, predict_length, start=0):
         self.eval()
@@ -131,7 +129,7 @@ class Seq2Seq(pl.LightningModule):
 
         for t in range(predict_length):
             y, hidden, atten = self.decoder(y, hidden, encoder_out)
-            prob.append(F.softmax(y, dim=1))
+            prob.append(F.softmax(y, dim=1).squeeze(0).cpu().numpy())
             y = y.argmax(1)
             trgs.append(y)
             attention.append(atten.T)
