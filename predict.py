@@ -2,6 +2,8 @@ import os
 import torch
 from model import Seq2Seq
 from utils import DataParser
+import random
+
 
 if __name__ == '__main__':
     # get all filenames in 'data' folder
@@ -16,25 +18,35 @@ if __name__ == '__main__':
 
     # load model from .ckpt file
     model = Seq2Seq.load_from_checkpoint(
-        'lightning_logs/version_1/checkpoints/epoch=0.ckpt',
+        'versions/version_0/checkpoints/epoch=99.ckpt',
         encoder_vocab_size=len(data.note2id),
         decoder_vocab_size=len(data.note2id),
-        embedding_dim=100,
+        embedding_dim=800,
         hidden_dim=128
     )
     # shape of x: (sequence_length, batch_size=1)
     pred, prob, _ = model.predict(
-        x=torch.tensor([data.note2id['mozart']]).unsqueeze(1),
-        start=data.note2id['mozart'],
-        predict_length=1
+        # prepare a sequence as input here
+        x=torch.tensor([data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[0]]).unsqueeze(1),
+        # choose a start note
+        start=data.note2id['Franz Schubert'],
+        predict_length=1500
     )
 
     # prob: [tensor_1, tensor_2, ..., tensor_predict_length]
     # if predict_length = 1, prob = [tensor_1]
     # tensor_i contains probability of each word
 
-    print(prob[0])
+    # print(prob[0])
 
     # use torch.topk to find the greatest k elements
     # torch.topk(input, k, dim=None,largest=True, sorted=None, out=None0)
     # -> (Tensor, LongTensor)
+    result = ''
+    for note in prob:
+        _, index = torch.topk(note, 5, dim=0)
+        index = index.cpu().numpy()
+        result += data.id2note[index[random.randint(0, 4)]] + ' '
+
+    with open('versions/midi/result.txt', 'w', encoding='utf-8') as f:
+        f.write(result)
