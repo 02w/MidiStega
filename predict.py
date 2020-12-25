@@ -88,24 +88,24 @@ def extract(cover, window, seq, start_note, output_dir):
 
     tmp = ''.join(str_list)
     for i in range(len(tmp) - 1, 0, -1):
-        if tmp[i] != 0:
+        if tmp[i] != '0':
             break
     groups = group(tmp[: i], n=8)
     str2bin(groups, output_dir + '/' + os.path.splitext(name)[0] + '.out')
 
 
 if __name__ == '__main__':
-    # hide(
-    #     message='versions/msg/bin',
-    #     window=3,
-    #     seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[1]],
-    #     start_note=data.note2id['Franz Schubert'],
-    #     output_dir='versions/midi'
-    # )
+    hide(
+        message='versions/msg/song.txt',
+        window=5,
+        seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[1]],
+        start_note=data.note2id['Franz Schubert'],
+        output_dir='versions/midi'
+    )
 
     extract(
-        cover='versions/midi/bin.midi',
-        window=3,
+        cover='versions/midi/song.midi',
+        window=5,
         seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[1]],
         start_note=data.note2id['Franz Schubert'],
         output_dir='versions/msg'
