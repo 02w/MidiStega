@@ -2,6 +2,7 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 from nltk import ngrams
+import struct
 
 
 def collate_fn(data):
@@ -84,3 +85,23 @@ class DataParser(object):
         #     train_data.append([note2id[i] for i in d[0]])
         #     target_data.append([note2id[i] for i in d[1]])
         return inputs_data, target_data
+
+
+def bin2str(src, group=0):
+    str_list = [f'{i:08b}' for i in src]
+    if group == 0:
+        return str_list
+    elif group > 0:
+        ret = []
+        tmp = ''.join(str_list)
+        for i in range(0, len(tmp), group):
+            ret.append(tmp[i: i + group])
+        return str_list, ret
+    else:
+        raise ValueError('Expect group > 0.')
+
+
+def str2bin(src, filename):
+    with open(filename, 'wb') as f:
+        for i in src:
+            f.write(struct.pack('B', int(i, 2)))
