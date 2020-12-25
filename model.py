@@ -129,10 +129,10 @@ class Seq2Seq(pl.LightningModule):
 
         for t in range(predict_length):
             y, hidden, atten = self.decoder(y, hidden, encoder_out)
-            prob.append(F.softmax(y, dim=1).squeeze(0).cpu().numpy())
+            prob.append(F.softmax(y, dim=1).squeeze(0))
             y = y.argmax(1)
             trgs.append(y)
             attention.append(atten.T)
 
-        attention = torch.cat(attention).cpu().numpy()
+        attention = torch.cat(attention)
         return trgs, prob, attention

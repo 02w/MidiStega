@@ -16,8 +16,8 @@ if __name__ == '__main__':
 
     # keep_author = True will add author name to the beginning
     data = DataParser(path='data/', file_list=files, keep_author=True)
-    # data.note2id maps word to index, e.g. data.note2id['mozart'] = 0
-    # data.id2note maps index to word, e.g. data.id2note[0] = 'mozart'
+    # data.note2id maps word to index, e.g. data.note2id['Franz Schubert'] = 0
+    # data.id2note maps index to word, e.g. data.id2note[0] = 'Franz Schubert'
 
     inputs_data, target_data = data.get_inputs_and_targets(length=32, overlap=0.2)
 
@@ -27,7 +27,12 @@ if __name__ == '__main__':
         collate_fn=collate_fn
     )
 
-    model = Seq2Seq(len(data.note2id), len(data.note2id), 100, 128)
+    model = Seq2Seq(
+        encoder_vocab_size=len(data.note2id),
+        decoder_vocab_size=len(data.note2id),
+        embedding_dim=100,
+        hidden_dim=128
+    )
 
     # to use cuda: trainer = pl.Trainer(max_epochs=?, gpus=1)
     trainer = pl.Trainer(max_epochs=1)

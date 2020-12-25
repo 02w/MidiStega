@@ -12,7 +12,7 @@ if __name__ == '__main__':
             files.append('{}/{}'.format(author, f))
 
     # keep_author = True will add author name to the beginning
-    data = DataParser(path='data/', file_list=files[:10], keep_author=True)
+    data = DataParser(path='data/', file_list=files, keep_author=True)
 
     # load model from .ckpt file
     model = Seq2Seq.load_from_checkpoint(
@@ -29,8 +29,12 @@ if __name__ == '__main__':
         predict_length=1
     )
 
-    # prob: [array_1, array_2, ..., array_predict_length]
-    # if predict_length = 1, prob = [array_1]
-    # array_i contains probability of each word
+    # prob: [tensor_1, tensor_2, ..., tensor_predict_length]
+    # if predict_length = 1, prob = [tensor_1]
+    # tensor_i contains probability of each word
 
     print(prob[0])
+
+    # use torch.topk to find the greatest k elements
+    # torch.topk(input, k, dim=None,largest=True, sorted=None, out=None0)
+    # -> (Tensor, LongTensor)

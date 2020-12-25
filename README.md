@@ -8,9 +8,10 @@ Idea: hide information by generating music.
 ## Reference
 
 - Seq2Seq model: [link](https://teddykoker.com/2020/02/nlp-from-scratch-annotated-attention/)
-- Midi to words: [mcleavey/musical-neural-net](https://github.com/mcleavey/musical-neural-net)
+- midi to words: [colab link](https://colab.research.google.com/github/cpmpercussion/creative-prediction/blob/master/notebooks/3-zeldic-musical-RNN.ipynb)
 - hide bitstream: [YangzlTHU/RNN-Stega](https://github.com/YangzlTHU/RNN-Stega)
 - Other
   - [yinoue93/CS224N_proj](https://github.com/yinoue93/CS224N_proj)
   - pytorch lightning [docs](https://pytorch-lightning.readthedocs.io)
+  - [mcleavey/musical-neural-net](https://github.com/mcleavey/musical-neural-net)
 
