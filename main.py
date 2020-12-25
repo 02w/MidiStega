@@ -18,8 +18,9 @@ if __name__ == '__main__':
     data = DataParser(path='data/', file_list=files, keep_author=True)
     # data.note2id maps word to index, e.g. data.note2id['Franz Schubert'] = 0
     # data.id2note maps index to word, e.g. data.id2note[0] = 'Franz Schubert'
+    data.save('data.joblib')
 
-    inputs_data, target_data = data.get_inputs_and_targets(length=32, overlap=0.2)
+    inputs_data, target_data = data.get_inputs_and_targets(length=64, overlap=0.2)
 
     train_loader = DataLoader(
         dataset=NoteDataset(inputs_data, target_data),
@@ -30,7 +31,7 @@ if __name__ == '__main__':
     model = Seq2Seq(
         encoder_vocab_size=len(data.note2id),
         decoder_vocab_size=len(data.note2id),
-        embedding_dim=100,
+        embedding_dim=800,
         hidden_dim=128
     )
 

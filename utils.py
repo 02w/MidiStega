@@ -3,6 +3,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 from nltk import ngrams
 import struct
+import joblib
 
 
 def collate_fn(data):
@@ -86,17 +87,31 @@ class DataParser(object):
         #     target_data.append([note2id[i] for i in d[1]])
         return inputs_data, target_data
 
+    def save(self, filename):
+        joblib.dump(self, filename)
 
-def bin2str(src, group=0):
+    @staticmethod
+    def load(filename):
+        return joblib.load(filename)
+
+
+def group(string, n):
+    ret = []
+    for i in range(0, len(string), n):
+        ret.append(string[i: i + n])
+    return ret
+
+
+def bin2str(src, window=0):
     str_list = [f'{i:08b}' for i in src]
-    if group == 0:
+    if window == 0:
         return str_list
-    elif group > 0:
-        ret = []
+    elif window > 0:
         tmp = ''.join(str_list)
-        for i in range(0, len(tmp), group):
-            ret.append(tmp[i: i + group])
-        return str_list, ret
+        tmp += '1'
+        while len(tmp) % window != 0:
+            tmp += '0'
+        return str_list, group(tmp, window)
     else:
         raise ValueError('Expect group > 0.')
 

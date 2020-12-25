@@ -173,4 +173,5 @@ if __name__ == '__main__':
     #         print('{}/{}'.format(i, len(paths)))
     #         i += 1
 
-    txt_to_midi(path='versions/midi/result.txt', output_dir='versions/midi')
+    # txt_to_midi(path='versions/midi/result2.txt', output_dir='versions/midi')
+    midi_to_txt(path='versions/midi/result2.midi', output_dir='versions')
