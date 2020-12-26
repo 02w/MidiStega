@@ -79,10 +79,19 @@ def note_array_to_stream(note_array):
 
 
 def clean(sequence):
-    for i in range(len(sequence) - 1, -1, -1):
-        if sequence[i] == 128 or sequence[i] == 129:
+    while True:
+        i = len(sequence) - 1
+        if sequence[i] == MELODY_NOTE_OFF or sequence[i] == MELODY_NO_EVENT:
             del (sequence[i])
-    sequence.append(128)
+        else:
+            break
+    sequence.append(MELODY_NOTE_OFF)
+
+    while True:
+        if sequence[0] == MELODY_NO_EVENT:
+            del (sequence[0])
+        else:
+            break
     return sequence
 
 
@@ -129,25 +138,6 @@ def get_path(composer):
         path = path.replace('/', '\\')
         paths.append(path)
     return paths
-
-
-# def check1():
-#     files = os.listdir('Franz Schubert')
-#     paths = []
-#     for file in files:
-#         path = os.path.join('.', 'Franz Schubert', file)
-#         paths.append(path)
-#     for path in paths:
-#         txt_to_midi(path, '2nd_midi')
-#
-# def check2():
-#     files = os.listdir('2nd_midi')
-#     paths = []
-#     for file in files:
-#         path = os.path.join('.', '2nd_midi', file)
-#         paths.append(path)
-#     for path in paths:
-#         midi_to_txt(path, '2nd_txt')
 
 
 if __name__ == '__main__':
