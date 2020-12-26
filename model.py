@@ -117,7 +117,14 @@ class Seq2Seq(pl.LightningModule):
         x, y = batch
         output = self(x, y)
         loss = F.cross_entropy(output.view(-1, output.size(2)), y.view(-1))
-        self.log('Train loss', loss)
+        self.log('Train step loss', loss, on_epoch=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        output = self(x, y)
+        loss = F.cross_entropy(output.view(-1, output.size(2)), y.view(-1))
+        self.log('Validation step loss', loss)
         return loss
 
     @torch.no_grad()

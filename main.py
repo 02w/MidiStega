@@ -5,6 +5,7 @@ from model import Seq2Seq
 from utils import collate_fn, DataParser, NoteDataset
 import pytorch_lightning as pl
 
+
 if __name__ == '__main__':
 
     # get all filenames in 'data' folder
@@ -22,8 +23,15 @@ if __name__ == '__main__':
 
     inputs_data, target_data = data.get_inputs_and_targets(length=64, overlap=0.2)
 
+    train_cnt = int(len(inputs_data) * 0.7)
     train_loader = DataLoader(
-        dataset=NoteDataset(inputs_data, target_data),
+        dataset=NoteDataset(inputs_data[: train_cnt], target_data[: train_cnt]),
+        batch_size=16,
+        collate_fn=collate_fn
+    )
+
+    validation_loader = DataLoader(
+        dataset=NoteDataset(inputs_data[train_cnt:], target_data[train_cnt:]),
         batch_size=16,
         collate_fn=collate_fn
     )
@@ -36,6 +44,8 @@ if __name__ == '__main__':
     )
 
     # to use cuda: trainer = pl.Trainer(max_epochs=?, gpus=1)
-    trainer = pl.Trainer(max_epochs=1)
+    trainer = pl.Trainer(max_epochs=10)
 
-    trainer.fit(model, train_loader)
+    trainer.fit(model, train_loader, validation_loader)
+
+    # tensorboard --logdir ./lightning_logs/version_0
