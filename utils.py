@@ -68,7 +68,7 @@ class DataParser(object):
             for i in self.melodies:
                 ngs = list(ngrams(i[1:], ngram))
                 ret.append([[i[0]] + list(j) for j in ngs])
-                return ret
+            return ret
         else:
             return [list(ngrams(i, ngram)) for i in self.melodies]
 
