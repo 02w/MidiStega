@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from model import Seq2Seq
 from utils import collate_fn, DataParser, NoteDataset
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 
 if __name__ == '__main__':
@@ -21,30 +22,32 @@ if __name__ == '__main__':
     # data.id2note maps index to word, e.g. data.id2note[0] = 'Franz Schubert'
     data.save('data.joblib')
 
-    inputs_data, target_data = data.get_inputs_and_targets(length=64, overlap=0.2)
+    inputs_data, target_data = data.get_inputs_and_targets(length=256, overlap=0.3)
 
-    train_cnt = int(len(inputs_data) * 0.7)
+    train_cnt = int(len(inputs_data) * 0.8)
     train_loader = DataLoader(
         dataset=NoteDataset(inputs_data[: train_cnt], target_data[: train_cnt]),
-        batch_size=16,
+        batch_size=32,
         collate_fn=collate_fn
     )
 
     validation_loader = DataLoader(
         dataset=NoteDataset(inputs_data[train_cnt:], target_data[train_cnt:]),
-        batch_size=16,
+        batch_size=32,
         collate_fn=collate_fn
     )
 
     model = Seq2Seq(
         encoder_vocab_size=len(data.note2id),
         decoder_vocab_size=len(data.note2id),
-        embedding_dim=800,
-        hidden_dim=128
+        embedding_dim=128,
+        hidden_dim=256,
+        n_layers=2
     )
 
+    checkpoint_callback = ModelCheckpoint(dirpath='versions/checkpoints', period=2, save_top_k=-1)
     # to use cuda: trainer = pl.Trainer(max_epochs=?, gpus=1)
-    trainer = pl.Trainer(max_epochs=10)
+    trainer = pl.Trainer(max_epochs=10, callbacks=[checkpoint_callback])
 
     trainer.fit(model, train_loader, validation_loader)
 

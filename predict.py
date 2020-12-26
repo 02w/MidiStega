@@ -2,7 +2,7 @@ import os
 import torch
 from model import Seq2Seq
 from utils import DataParser, bin2str, str2bin, group
-from convert import midi_to_txt, txt_to_midi
+from convert import midi_to_txt, txt_to_midi, MELODY_NOTE_OFF
 import numpy as np
 
 # get all filenames in 'data' folder
@@ -21,8 +21,9 @@ model = Seq2Seq.load_from_checkpoint(
     'versions/version_0/checkpoints/epoch=99.ckpt',
     encoder_vocab_size=len(data.note2id),
     decoder_vocab_size=len(data.note2id),
-    embedding_dim=800,
-    hidden_dim=128
+    embedding_dim=128,
+    hidden_dim=256,
+    n_layers=2
 )
 
 
@@ -59,7 +60,7 @@ def hide(message, window, seq, start_note, output_dir):
         result += data.id2note[candidates[int(index, 2)]] + ' '
 
     with open('versions/tmp/hide/' + os.path.splitext(name)[0] + '.txt', 'w', encoding='utf-8') as f:
-        f.write(result + '128')
+        f.write(result + str(MELODY_NOTE_OFF))
     txt_to_midi(path='versions/tmp/hide/' + os.path.splitext(name)[0] + '.txt', output_dir=output_dir)
 
 

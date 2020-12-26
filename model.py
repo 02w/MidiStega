@@ -93,12 +93,12 @@ class Decoder(pl.LightningModule):
 
 
 class Seq2Seq(pl.LightningModule):
-    def __init__(self, encoder_vocab_size, decoder_vocab_size, embedding_dim, hidden_dim):
+    def __init__(self, encoder_vocab_size, decoder_vocab_size, embedding_dim, hidden_dim, n_layers=1):
         super().__init__()
         self.encoder_vocab_size = encoder_vocab_size
         self.decoder_vocab_size = decoder_vocab_size
-        self.encoder = Encoder(encoder_vocab_size, embedding_dim, hidden_dim)
-        self.decoder = Decoder(decoder_vocab_size, embedding_dim, hidden_dim)
+        self.encoder = Encoder(encoder_vocab_size, embedding_dim, hidden_dim, n_layers)
+        self.decoder = Decoder(decoder_vocab_size, embedding_dim, hidden_dim, n_layers)
 
     def forward(self, inputs, target, teacher_force_ratio=0.5):
         out = torch.zeros(target.size(0), target.size(1), self.decoder.output_size).to(inputs.device)
