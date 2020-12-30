@@ -4,6 +4,7 @@ from model import Seq2Seq
 from utils import DataParser, bin2str, str2bin, group
 from convert import midi_to_txt, txt_to_midi, MELODY_NOTE_OFF
 import numpy as np
+import random
 
 # get all filenames in 'data' folder
 # dirs = list(os.walk('data'))
@@ -18,7 +19,7 @@ import numpy as np
 data = DataParser.load('data.joblib')
 # load model from .ckpt file
 model = Seq2Seq.load_from_checkpoint(
-    'versions/version_0/checkpoints/epoch=99.ckpt',
+    'versions/version_1/epoch=49.ckpt',
     encoder_vocab_size=len(data.note2id),
     decoder_vocab_size=len(data.note2id),
     embedding_dim=128,
@@ -41,7 +42,7 @@ def hide(message, window, seq, start_note, output_dir):
         x=torch.tensor(seq).unsqueeze(1),
         # choose a start note
         start=start_note,
-        predict_length=len(groups)
+        predict_length=len(groups) + 1
     )
 
     # prob: [tensor_1, tensor_2, ..., tensor_predict_length]
@@ -54,7 +55,7 @@ def hide(message, window, seq, start_note, output_dir):
     # torch.topk(input, k, dim=None,largest=True, sorted=None, out=None0)
     # -> (Tensor, LongTensor)
     result = ''
-    for index, note in zip(groups, prob):
+    for index, note in zip(groups, prob[1:]):
         _, candidates = torch.topk(note, 2 ** window, dim=0)
         candidates = candidates.cpu().numpy()
         result += data.id2note[candidates[int(index, 2)]] + ' '
@@ -80,7 +81,7 @@ def extract(cover, window, seq, start_note, output_dir):
     )
 
     str_list = []
-    for note, p in zip(notes, prob):
+    for note, p in zip(notes, prob[1:]):
         _, candidates = torch.topk(p, 2 ** window, dim=0)
         candidates = candidates.cpu().numpy()
         index = data.note2id[note]
@@ -95,19 +96,48 @@ def extract(cover, window, seq, start_note, output_dir):
     str2bin(groups, output_dir + '/' + os.path.splitext(name)[0] + '.out')
 
 
-if __name__ == '__main__':
-    hide(
-        message='versions/msg/song.txt',
-        window=5,
-        seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[1]],
-        start_note=data.note2id['Franz Schubert'],
-        output_dir='versions/midi'
+def compose(seq, length, random_choose=True, window=5):
+    pred, prob, attn = model.predict(
+        # prepare a sequence as input here
+        x=torch.tensor(seq).unsqueeze(1),
+        # choose a start note
+        start=seq[0],
+        predict_length=length
     )
+    result = ''
+    for p in prob[1:]:
+        _, candidates = torch.topk(p, window, dim=0)
+        candidates = candidates.cpu().numpy()
+        if random_choose:
+            result += data.id2note[candidates[random.randint(0, window - 1)]] + ' '
+        else:
+            result += data.id2note[candidates[0]] + ' '
 
-    extract(
-        cover='versions/midi/song.midi',
-        window=5,
-        seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[1]],
-        start_note=data.note2id['Franz Schubert'],
-        output_dir='versions/msg'
+    with open('versions/tmp/compose.txt', 'w', encoding='utf8') as f:
+        f.write(result + str(MELODY_NOTE_OFF))
+
+    txt_to_midi(path='versions/tmp/compose.txt', output_dir='versions/midi')
+
+
+if __name__ == '__main__':
+    # hide(
+    #     message='versions/msg/license.txt',
+    #     window=3,
+    #     seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[6]][: 128],
+    #     start_note=data.note2id['Franz Schubert'],
+    #     output_dir='versions/midi'
+    # )
+
+    # extract(
+    #     cover='versions/midi/bin.midi',
+    #     window=5,
+    #     seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[0]],
+    #     start_note=data.note2id['Franz Schubert'],
+    #     output_dir='versions/msg'
+    # )
+    compose(
+        seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[99]][: 128],
+        length=150,
+        random_choose=True,
+        window=8
     )

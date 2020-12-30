@@ -113,7 +113,7 @@ def midi_to_txt(path, output_dir):
 
 def txt_to_midi(path, output_dir):
     with open(path, 'r') as f:
-        text = f.read().split(' ')
+        text = f.read().strip().split(' ')
         data = []
         for item in text:
             data.append(int(item))
@@ -163,5 +163,5 @@ if __name__ == '__main__':
     #         print('{}/{}'.format(i, len(paths)))
     #         i += 1
 
-    # txt_to_midi(path='versions/midi/result2.txt', output_dir='versions/midi')
-    midi_to_txt(path='versions/midi/result2.midi', output_dir='versions')
+    txt_to_midi(path='versions/tmp/hide/bin.txt', output_dir='versions/midi')
+    # midi_to_txt(path='versions/midi/result2.midi', output_dir='versions')
