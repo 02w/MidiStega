@@ -54,7 +54,7 @@ def hide(message, window, seq, start_note, output_dir):
     # use torch.topk to find the greatest k elements
     # torch.topk(input, k, dim=None,largest=True, sorted=None, out=None0)
     # -> (Tensor, LongTensor)
-    result = ''
+    result = '52 '
     for index, note in zip(groups, prob[1:]):
         _, candidates = torch.topk(note, 2 ** window, dim=0)
         candidates = candidates.cpu().numpy()
@@ -81,7 +81,7 @@ def extract(cover, window, seq, start_note, output_dir):
     )
 
     str_list = []
-    for note, p in zip(notes, prob[1:]):
+    for note, p in zip(notes[1:], prob[1:]):
         _, candidates = torch.topk(p, 2 ** window, dim=0)
         candidates = candidates.cpu().numpy()
         index = data.note2id[note]
@@ -120,24 +120,24 @@ def compose(seq, length, random_choose=True, window=5):
 
 
 if __name__ == '__main__':
-    # hide(
-    #     message='versions/msg/license.txt',
-    #     window=3,
-    #     seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[6]][: 128],
-    #     start_note=data.note2id['Franz Schubert'],
-    #     output_dir='versions/midi'
-    # )
-
-    # extract(
-    #     cover='versions/midi/bin.midi',
-    #     window=5,
-    #     seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[0]],
-    #     start_note=data.note2id['Franz Schubert'],
-    #     output_dir='versions/msg'
-    # )
-    compose(
-        seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[99]][: 128],
-        length=150,
-        random_choose=True,
-        window=8
+    hide(
+        message='versions/msg/bin',
+        window=5,
+        seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[6]][: 128],
+        start_note=data.note2id['Franz Schubert'],
+        output_dir='versions/midi'
     )
+
+    extract(
+        cover='versions/midi/bin.midi',
+        window=5,
+        seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[6]][: 128],
+        start_note=data.note2id['Franz Schubert'],
+        output_dir='versions/msg'
+    )
+    # compose(
+    #     seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[99]][: 128],
+    #     length=150,
+    #     random_choose=True,
+    #     window=8
+    # )
