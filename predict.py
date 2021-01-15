@@ -5,6 +5,8 @@ from utils import DataParser, bin2str, str2bin, group
 from convert import midi_to_txt, txt_to_midi, MELODY_NOTE_OFF
 import numpy as np
 import random
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # get all filenames in 'data' folder
 # dirs = list(os.walk('data'))
@@ -26,6 +28,17 @@ model = Seq2Seq.load_from_checkpoint(
     hidden_dim=256,
     n_layers=2
 )
+
+
+def plot_attn(attn_data):
+    # sns.set()
+    # sns.heatmap(attn_data)
+
+    fig = plt.figure(figsize=(5, 5), dpi=300)
+    ax = fig.add_subplot(111)
+    ax.matshow(attn_data)
+    plt.show()
+    plt.savefig('attn.png')
 
 
 def hide(message, window, seq, start_note, output_dir):
@@ -117,6 +130,7 @@ def compose(seq, length, random_choose=True, window=5):
         f.write(result + str(MELODY_NOTE_OFF))
 
     txt_to_midi(path='versions/tmp/compose.txt', output_dir='versions/midi')
+    plot_attn(attn.cpu().numpy())
 
 
 if __name__ == '__main__':
@@ -135,9 +149,10 @@ if __name__ == '__main__':
         start_note=data.note2id['Franz Schubert'],
         output_dir='versions/msg'
     )
-    # compose(
-    #     seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[99]][: 128],
-    #     length=150,
-    #     random_choose=True,
-    #     window=8
-    # )
+    
+    compose(
+        seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[99]][: 25],
+        length=25,
+        random_choose=True,
+        window=8
+    )
