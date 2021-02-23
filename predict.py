@@ -38,8 +38,8 @@ def plot_attn(attn_data):
     fig = plt.figure(figsize=(5, 5), dpi=300)
     ax = fig.add_subplot(111)
     ax.matshow(attn_data)
-    plt.show()
     plt.savefig('attn.png')
+    plt.show()
 
 
 def choose(p, window, group):
