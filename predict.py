@@ -1,5 +1,6 @@
 import os
 import torch
+import torch.nn.functional as F
 from model import Seq2Seq
 from utils import DataParser, bin2str, str2bin, group
 from convert import midi_to_txt, txt_to_midi, MELODY_NOTE_OFF
@@ -41,7 +42,12 @@ def plot_attn(attn_data):
     plt.savefig('attn.png')
 
 
-def hide(message, window, seq, start_note, output_dir):
+def choose(p, window, group):
+    _, candidates = torch.topk(p, 2 ** window, dim=0)
+    return candidates[int(group, 2)]
+
+
+def hide(message, window, seq, output_dir):
     name = os.path.basename(message)
 
     with open(message, 'rb') as f:
@@ -54,8 +60,12 @@ def hide(message, window, seq, start_note, output_dir):
         # prepare a sequence as input here
         x=torch.tensor(seq).unsqueeze(1),
         # choose a start note
-        start=start_note,
-        predict_length=len(groups) + 1
+        start=seq[0],
+        predict_length=len(groups),
+        topk=window,
+        # how to choose a note from the probability distribution
+        criteria=choose,
+        groups=groups
     )
 
     # prob: [tensor_1, tensor_2, ..., tensor_predict_length]
@@ -65,41 +75,51 @@ def hide(message, window, seq, start_note, output_dir):
     # print(prob[0])
 
     # use torch.topk to find the greatest k elements
-    # torch.topk(input, k, dim=None,largest=True, sorted=None, out=None0)
+    # torch.topk(input, k, dim=None,largest=True, sorted=None, out=None)
     # -> (Tensor, LongTensor)
     result = '52 '
-    for index, note in zip(groups, prob[1:]):
-        _, candidates = torch.topk(note, 2 ** window, dim=0)
-        candidates = candidates.cpu().numpy()
-        result += data.id2note[candidates[int(index, 2)]] + ' '
+    for p in pred:
+        result += data.id2note[p.item()] + ' '
 
     with open('versions/tmp/hide/' + os.path.splitext(name)[0] + '.txt', 'w', encoding='utf-8') as f:
         f.write(result + str(MELODY_NOTE_OFF))
     txt_to_midi(path='versions/tmp/hide/' + os.path.splitext(name)[0] + '.txt', output_dir=output_dir)
 
 
-def extract(cover, window, seq, start_note, output_dir):
+def extract(cover, window, seq, output_dir):
     name = os.path.basename(cover)
 
     midi_to_txt(path=cover, output_dir='versions/tmp/extract')
     with open('versions/tmp/extract/' + name.replace('midi', 'txt'), 'r', encoding='utf8') as f:
         notes = f.read().strip().split()
 
-    pred, prob, _ = model.predict(
-        # prepare a sequence as input here
-        x=torch.tensor(seq).unsqueeze(1),
-        # choose a start note
-        start=start_note,
-        predict_length=len(notes) - 1
-    )
-
+    start_note = seq[0]
+    predict_length = len(notes) - 1  # - 1: skip the beginning '52'
     str_list = []
-    for note, p in zip(notes[1:], prob[1:]):
+
+    model.eval()
+    x = torch.tensor(seq).unsqueeze(1)
+    y = torch.tensor([start_note]).long().to(x.device)
+
+    encoder_out, hidden = model.encoder(x)
+
+    y, hidden, atten = model.decoder(y, hidden, encoder_out)
+    y = y.argmax(1)
+
+    for t in range(predict_length):
+        y, hidden, atten = model.decoder(y, hidden, encoder_out)
+        p = F.softmax(y, dim=1).squeeze(0)
+
         _, candidates = torch.topk(p, 2 ** window, dim=0)
         candidates = candidates.cpu().numpy()
-        index = data.note2id[note]
-        m = np.where(candidates == index)[0][0]
-        str_list.append(np.binary_repr(m, width=window))
+        y = data.note2id[notes[t + 1]]
+        try:
+            m = np.where(candidates == y)[0][0]
+            str_list.append(np.binary_repr(m, width=window))
+        except IndexError:
+            print('Only part of the message can be extracted!')
+
+        y = torch.tensor([y])
 
     tmp = ''.join(str_list)
     for i in range(len(tmp) - 1, 0, -1):
@@ -115,16 +135,12 @@ def compose(seq, length, random_choose=True, window=5):
         x=torch.tensor(seq).unsqueeze(1),
         # choose a start note
         start=seq[0],
-        predict_length=length
+        predict_length=length,
+        topk=window if random_choose else 1
     )
     result = ''
-    for p in prob[1:]:
-        _, candidates = torch.topk(p, window, dim=0)
-        candidates = candidates.cpu().numpy()
-        if random_choose:
-            result += data.id2note[candidates[random.randint(0, window - 1)]] + ' '
-        else:
-            result += data.id2note[candidates[0]] + ' '
+    for p in pred:
+        result += data.id2note[p.item()] + ' '
 
     with open('versions/tmp/compose.txt', 'w', encoding='utf8') as f:
         f.write(result + str(MELODY_NOTE_OFF))
@@ -137,21 +153,19 @@ if __name__ == '__main__':
     hide(
         message='versions/msg/bin',
         window=5,
-        seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[6]][: 128],
-        start_note=data.note2id['Franz Schubert'],
+        seq=[data.note2id[i] for i in data.melodies[6]][: 128],
         output_dir='versions/midi'
     )
 
     extract(
         cover='versions/midi/bin.midi',
         window=5,
-        seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[6]][: 128],
-        start_note=data.note2id['Franz Schubert'],
+        seq=[data.note2id[i] for i in data.melodies[6]][: 128],
         output_dir='versions/msg'
     )
-    
+
     compose(
-        seq=[data.note2id['Franz Schubert']] + [data.note2id[i] for i in data.melodies[99]][: 25],
+        seq=[data.note2id[i] for i in data.melodies[99]][: 25],
         length=25,
         random_choose=True,
         window=8

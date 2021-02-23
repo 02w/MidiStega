@@ -4,6 +4,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import pytorch_lightning as pl
 import random
+import numpy as np
 
 
 ###########################################################
@@ -128,16 +129,30 @@ class Seq2Seq(pl.LightningModule):
         return loss
 
     @torch.no_grad()
-    def predict(self, x, predict_length, start=0):
+    def predict(self, x, start, predict_length=1, topk=1, criteria=None, groups=None):
         self.eval()
         y = torch.tensor([start]).long().to(x.device)
         trgs, prob, attention = [], [], []
         encoder_out, hidden = self.encoder(x)
 
+        if topk < 1:
+            raise ValueError('Require topk >= 1.')
+
+        # This will predict the name of the composer which we don't need
+        y, hidden, atten = self.decoder(y, hidden, encoder_out)
+        y = y.argmax(1)
+
+        # This loop will predict the notes
         for t in range(predict_length):
             y, hidden, atten = self.decoder(y, hidden, encoder_out)
-            prob.append(F.softmax(y, dim=1).squeeze(0))
-            y = y.argmax(1)
+            p = F.softmax(y, dim=1).squeeze(0)
+            prob.append(p)
+            if criteria is None:
+                _, candidates = torch.topk(p, topk, dim=0)
+                y = candidates[random.randint(0, topk - 1)]
+            else:
+                y = criteria(p, topk, groups[t])
+            y = torch.tensor([y.item()]).long().to(x.device)
             trgs.append(y)
             attention.append(atten.T)
 
