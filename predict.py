@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from model import Seq2Seq
 from utils import DataParser, bin2str, str2bin, group
-from convert import midi_to_txt, txt_to_midi, MELODY_NOTE_OFF
+from convert import midi2txt, txt2midi, MELODY_NOTE_OFF
 import numpy as np
 import random
 import seaborn as sns
@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 data = DataParser.load('data.joblib')
 # load model from .ckpt file
 model = Seq2Seq.load_from_checkpoint(
-    'versions/version_1/epoch=49.ckpt',
+    'versions/epoch=69.ckpt',
     encoder_vocab_size=len(data.note2id),
     decoder_vocab_size=len(data.note2id),
     embedding_dim=128,
@@ -83,13 +83,13 @@ def hide(message, window, seq, output_dir):
 
     with open('versions/tmp/hide/' + os.path.splitext(name)[0] + '.txt', 'w', encoding='utf-8') as f:
         f.write(result + str(MELODY_NOTE_OFF))
-    txt_to_midi(path='versions/tmp/hide/' + os.path.splitext(name)[0] + '.txt', output_dir=output_dir)
+    txt2midi(path='versions/tmp/hide/' + os.path.splitext(name)[0] + '.txt', out_dir=output_dir)
 
 
 def extract(cover, window, seq, output_dir):
     name = os.path.basename(cover)
 
-    midi_to_txt(path=cover, output_dir='versions/tmp/extract')
+    midi2txt(path=cover, out_dir='versions/tmp/extract')
     with open('versions/tmp/extract/' + name.replace('midi', 'txt'), 'r', encoding='utf8') as f:
         notes = f.read().strip().split()
 
@@ -145,27 +145,27 @@ def compose(seq, length, random_choose=True, window=5):
     with open('versions/tmp/compose.txt', 'w', encoding='utf8') as f:
         f.write(result + str(MELODY_NOTE_OFF))
 
-    txt_to_midi(path='versions/tmp/compose.txt', output_dir='versions/midi')
+    txt2midi(path='versions/tmp/compose.txt', out_dir='versions/midi')
     plot_attn(attn.cpu().numpy())
 
 
 if __name__ == '__main__':
     hide(
-        message='versions/msg/bin',
+        message='versions/msg/printk.c',
         window=5,
         seq=[data.note2id[i] for i in data.melodies[6]][: 128],
         output_dir='versions/midi'
     )
 
     extract(
-        cover='versions/midi/bin.midi',
+        cover='versions/midi/printk.midi',
         window=5,
         seq=[data.note2id[i] for i in data.melodies[6]][: 128],
         output_dir='versions/msg'
     )
 
     compose(
-        seq=[data.note2id[i] for i in data.melodies[99]][: 25],
+        seq=[data.note2id[i] for i in data.melodies[99]][: 128],
         length=25,
         random_choose=True,
         window=8
