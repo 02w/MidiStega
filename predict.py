@@ -1,9 +1,11 @@
 import os
+
+import joblib
 import torch
 import torch.nn.functional as F
 from model import Seq2Seq
 from utils import DataParser, bin2str, str2bin, group
-from convert import midi2txt, txt2midi, MELODY_NOTE_OFF
+from convert import midi2seq, seq2midi, MELODY_NOTE_OFF
 import numpy as np
 import random
 import seaborn as sns
@@ -77,21 +79,18 @@ def hide(message, window, seq, output_dir):
     # use torch.topk to find the greatest k elements
     # torch.topk(input, k, dim=None,largest=True, sorted=None, out=None)
     # -> (Tensor, LongTensor)
-    result = '52 '
-    for p in pred:
-        result += data.id2note[p.item()] + ' '
 
-    with open('versions/tmp/hide/' + os.path.splitext(name)[0] + '.txt', 'w', encoding='utf-8') as f:
-        f.write(result + str(MELODY_NOTE_OFF))
-    txt2midi(path='versions/tmp/hide/' + os.path.splitext(name)[0] + '.txt', out_dir=output_dir)
+    result = [52] + [data.id2note[p.item()] for p in pred] + [MELODY_NOTE_OFF]
+    joblib.dump(result, 'versions/tmp/hide/' + os.path.splitext(name)[0] + '.pkl')
+
+    seq2midi(path='versions/tmp/hide/' + os.path.splitext(name)[0] + '.pkl', out_dir=output_dir)
 
 
 def extract(cover, window, seq, output_dir):
     name = os.path.basename(cover)
 
-    midi2txt(path=cover, out_dir='versions/tmp/extract')
-    with open('versions/tmp/extract/' + name.replace('midi', 'txt'), 'r', encoding='utf8') as f:
-        notes = f.read().strip().split()
+    midi2seq(path=cover, out_dir='versions/tmp/extract')
+    notes = joblib.load('versions/tmp/extract/' + name.replace('midi', 'pkl'))
 
     start_note = seq[0]
     predict_length = len(notes) - 1  # - 1: skip the beginning '52'
@@ -106,18 +105,18 @@ def extract(cover, window, seq, output_dir):
     y, hidden, atten = model.decoder(y, hidden, encoder_out)
     y = y.argmax(1)
 
-    for t in range(predict_length):
+    for t in range(predict_length - 1):  # ignore the added MELODY_NOTE_OFF
         y, hidden, atten = model.decoder(y, hidden, encoder_out)
         p = F.softmax(y, dim=1).squeeze(0)
 
         _, candidates = torch.topk(p, 2 ** window, dim=0)
         candidates = candidates.cpu().numpy()
-        y = data.note2id[notes[t + 1]]
+        y = data.note2id[str(notes[t + 1])]
         try:
             m = np.where(candidates == y)[0][0]
             str_list.append(np.binary_repr(m, width=window))
         except IndexError:
-            print('Only part of the message can be extracted!')
+            print(f'Error at step {t}: only part of the message can be extracted!')
 
         y = torch.tensor([y])
 
@@ -138,27 +137,24 @@ def compose(seq, length, random_choose=True, window=5):
         predict_length=length,
         topk=window if random_choose else 1
     )
-    result = ''
-    for p in pred:
-        result += data.id2note[p.item()] + ' '
+    result = [data.id2note[p.item()] for p in pred] + [MELODY_NOTE_OFF]
 
-    with open('versions/tmp/compose.txt', 'w', encoding='utf8') as f:
-        f.write(result + str(MELODY_NOTE_OFF))
+    joblib.dump(result, 'versions/tmp/compose.pkl')
 
-    txt2midi(path='versions/tmp/compose.txt', out_dir='versions/midi')
+    seq2midi(path='versions/tmp/compose.pkl', out_dir='versions/midi')
     plot_attn(attn.cpu().numpy())
 
 
 if __name__ == '__main__':
     hide(
-        message='versions/msg/printk.c',
+        message='versions/msg/123.docx',
         window=5,
         seq=[data.note2id[i] for i in data.melodies[6]][: 128],
         output_dir='versions/midi'
     )
 
     extract(
-        cover='versions/midi/printk.midi',
+        cover='versions/midi/123.midi',
         window=5,
         seq=[data.note2id[i] for i in data.melodies[6]][: 128],
         output_dir='versions/msg'
