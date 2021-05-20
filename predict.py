@@ -22,15 +22,15 @@ import matplotlib.pyplot as plt
 # data = DataParser(path='data/', file_list=files, keep_author=True)
 
 data = DataParser.load('data.joblib')
-# load model from .ckpt file
-model = Seq2Seq.load_from_checkpoint(
-    'versions/epoch=69.ckpt',
+
+model = Seq2Seq(
     encoder_vocab_size=len(data.note2id),
     decoder_vocab_size=len(data.note2id),
     embedding_dim=128,
     hidden_dim=256,
     n_layers=2
 )
+model.load_state_dict(torch.load('versions/model.pkl'))
 
 
 def plot_attn(attn_data):

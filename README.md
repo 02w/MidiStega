@@ -17,6 +17,8 @@ Idea: hide information by generating music.
   - pytorch lightning [docs](https://pytorch-lightning.readthedocs.io)
 
 ## See Also
+For a pipeline of compress-encrypt-hide, and a demo web application built with [Streamlit](https://streamlit.io/), check out the [`app`](https://github.com/02w/MidiStega/tree/app) branch. Run it with `streamlit run app.py`.
+
 Actually, it's quite simple to train a classifier to determine whether there is secret information hidden in a midi file. ResNet can obtain a pretty good result.
 
 See [ResNet-for-TSC](https://github.com/02w/ResNet-for-TSC) as an example.
