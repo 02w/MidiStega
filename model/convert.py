@@ -1,8 +1,8 @@
 import csv
-
 import joblib
 import muspy
 import numpy as np
+from .modify import modify, de_modify
 
 MELODY_NOTE_OFF = 0
 
@@ -24,7 +24,7 @@ def get_path(composer):
 
 
 # 补充缺失值，修正类型
-def modify(music):
+def adopt(music):
     for track in music.tracks:
         for note in track.notes:
             note.pitch = int(note.pitch.tolist()[0])
@@ -71,6 +71,7 @@ def standardizing(path, out_dir):
 
 def midi2seq(path, out_dir):
     music = muspy.read_midi(path)
+    music = de_modify(music)
     sequence = music.to_pitch_representation()
     sequence = sequence.reshape(len(sequence))
     sequence = sequence.tolist()
@@ -85,7 +86,7 @@ def seq2midi(path, out_dir):
     sequence = np.array(sequence)
     sequence.reshape(len(sequence), 1)
     music = muspy.from_pitch_representation(sequence, resolution=15)
-    # modify(music)
+    music = modify(music)
     save_name = path.split('/')[-1].replace('pkl', 'midi')
     save_path = out_dir + '/' + save_name
     muspy.write_midi(save_path, music)

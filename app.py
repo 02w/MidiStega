@@ -34,7 +34,7 @@ def play_midi(midi):
 
 
 def show_sidebar():
-    config = {'cipher': st.sidebar.selectbox(label='Select a cipher', options=['AES-256', 'Chacha20']),
+    config = {'cipher': st.sidebar.selectbox(label='Select a cipher', options=['AES-GCM', 'Chacha20']),
               'key': st.sidebar.text_input(label='Input the key', type='password')}
     return config
 
