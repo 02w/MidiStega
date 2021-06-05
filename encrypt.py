@@ -14,7 +14,6 @@ def split(bytes_stream):
     nonce = base64.decodebytes(bytes_stream[: 17])
     # print(nonce)
     cipher_text = base64.decodebytes(bytes_stream[17: (len(bytes_stream) - 25)])
-    # cipher_text = base64.decodebytes(bytes_stream[17:])
     tag = base64.decodebytes(bytes_stream[(len(bytes_stream) - 26):])
     return nonce, cipher_text, tag
 
@@ -47,7 +46,6 @@ class Encryption(object):
             nonce, cipher_text, tag = split(bytes_stream)
             cipher = AES.new(self.key, AES.MODE_GCM, nonce=nonce)
             cipher.update(self.header)
-            # plain_text = cipher.decrypt(cipher_text)
             plain_text = cipher.decrypt_and_verify(cipher_text, tag)
             return plain_text
 

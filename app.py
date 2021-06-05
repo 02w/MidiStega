@@ -34,7 +34,7 @@ def play_midi(midi):
 
 
 def show_sidebar():
-    config = {'cipher': st.sidebar.selectbox(label='Select a cipher', options=['AES-GCM', 'Chacha20']),
+    config = {'cipher': st.sidebar.selectbox(label='Select a cipher', options=['AES-GCM']),
               'key': st.sidebar.text_input(label='Input the key', type='password')}
     return config
 
@@ -71,7 +71,7 @@ def run_hide_extract(mode):
                                    compressed if len(compressed) < len(raw) else raw)
             midi_hide = hide_app(encrypted, int(selected))
             play_midi(midi_hide)
-            # TODO: download()
+
     else:
         with placeholder.beta_container():
             st.markdown('## Extract your message from a MIDI file...')
@@ -93,7 +93,6 @@ def run_hide_extract(mode):
                 st.success(text.decode('utf-8'))
             except Exception:
                 pass
-            # TODO: download() or show
 
 
 def run_detect():

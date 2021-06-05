@@ -7,17 +7,6 @@ import random
 import numpy as np
 
 
-###########################################################
-# This seq2seq with attention model is copied from
-# https://teddykoker.com/2020/02/nlp-from-scratch-annotated-attention/
-# Note:
-# - We don't use batch_first here, so typically a tensor containing
-#   input data is of shape (seq_length, batch_size, hidden_dim).
-#   batch size is the 2nd dim.
-# - We use pytorch_lightning for simpler training loop.
-#   The configure_optimizers function and training_step function
-#   in class Seq2Seq are hooks for pl.Trainer in main.py.
-###########################################################
 class Encoder(pl.LightningModule):
     def __init__(self, input_size, embedding_size, hidden_size, n_layers=1, dropout=0.5):
         super().__init__()
